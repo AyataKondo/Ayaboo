@@ -26,3 +26,6 @@ production:
   encoding: unicode
   pool: 5
 
+production: 
+     <<: *default
+     url: <%= ENV['DATABASE_URL'] %>
