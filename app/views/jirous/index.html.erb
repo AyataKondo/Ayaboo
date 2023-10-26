@@ -1,0 +1,107 @@
+<body>
+
+<div class="jirous-container">
+<h3>ラーメンレビュー一覧</h3>
+<%= page_entries_info @jirous %>
+<%= paginate @jirous %>
+<% if user_signed_in? %>
+  <%= link_to "マイページへ", user_path(current_user.id) %>
+<% end %>
+
+<% @jirous.each do |t| %>
+    <div class="jirou">
+      <%= t.user.email %>
+      <%= image_tag t.image_url, size: "250x200" if t.image? %>
+      <% if user_signed_in? %>
+       <% if current_user.already_liked?(t) %>
+          <%= link_to jirou_like_path(id: t.id, jirou_id: t.id), method: :delete do %>
+            <i class="fas fa-heart"></i><%= t.likes.count %>
+          <% end %>
+       <% else %>
+          <%= link_to jirou_likes_path(id: t.id, jirou_id: t.id), method: :post do %>
+            <i class="far fa-heart"></i><%= t.likes.count %>
+          <% end %>
+       <% end %>
+      <% else %>
+        <i class="far fa-heart"></i><%= t.likes.count %>
+      <% end %>
+      <div class="main-box">
+        <div class="left-container">
+        <%= t.about %>
+        </div>
+        <div class="right-container">
+          <%= link_to "詳細", jirou_path(t.id) %>
+          <%= link_to "編集", edit_jirou_path(t.id) %>
+          <%= link_to "削除", jirou_path(t.id), method: :delete %>
+        </div>
+      </div>
+        <p class="time"><%= t.created_at %></p>
+    </div>
+
+    <div>
+    <h2>総合評価：
+    <span class="star-rating">
+       <span class="star-rating-front" style="width: <%= getPercent(t.overall) %>%;">★★★★★</span>
+       <span class="star-rating-back">★★★★★</span>
+    </span> 
+    </h2>
+    </div>
+  <% end %>
+</div>
+
+<div id='map'></div>
+
+<style>
+#map {
+  height: 300px;
+  width: 500px;
+}
+</style>
+
+<!-- js部分 -->
+<script>
+    function initMap() {
+
+      let latlng = new google.maps.LatLng(38.60, 139.5);
+      let styles = [
+           {
+            stylers: [
+             { "saturation": 0 },
+             { "lightness": 0 }
+            ]
+           }
+          ];
+
+      let map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 5.5,
+          styles: styles,
+          center: latlng
+      });
+      let transitLayer = new google.maps.TransitLayer();
+      transitLayer.setMap(map);
+
+      <% @jirous.each do |jirou|%>
+        ( function() { 
+          let markerLatLng = { lat: <%= jirou.lat %>, lng: <%= jirou.lng %> }; 
+          let marker = new google.maps.Marker({ 
+            position: markerLatLng, 
+            map: map 
+          });
+          let infowindow = new google.maps.InfoWindow({
+            position: markerLatLng,
+            content: "<a href='<%= jirou_url(jirou.id) %>' target='_blank'><%= jirou.shop %></a>"
+          }); 
+          marker.addListener('click', function() {
+            infowindow.open(map, marker);
+          });
+
+       })();
+      <% end %>
+      //複数マーカー ここまで  
+  }
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDh_KhRsCxtv_-rHqZVMRfhuQ2GVs7cG_o&callback=initMap" async defer></script>
+
+<%= link_to "一覧に戻る", jirous_path %>
+</body>
